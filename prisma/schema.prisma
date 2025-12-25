@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  first_name String
+  last_name  String
+  email      String   @unique
+  address    String
+  password   String
+  role       Int    @default(1)
+  createdAT  DateTime @default(now())
+  isActive   Boolean  @default(true)
+ 
+}
+model Role{
+  id Int      @id @default(autoincrement())
+  role String @unique 
+}
+
+model Teacher {
+  id                    Int                     @id @default(autoincrement())
+  userId                Int                     @unique
+  joiningDate          DateTime                @default(now())
+ 
+}
+
+model TeacherClasses {
+  id         Int     @id @default(autoincrement())
+  classId   Int
+  teacherId Int
+  isActive  Boolean @default(true)
+ 
+}
+
+model TeacherClassesSubject {
+  id         Int     @id @default(autoincrement())
+  teacherClassId Int
+  subjectId Int
+  isActive  Boolean @default(true)
+ 
+}
+
+model Student {
+  id             Int      @id @default(autoincrement())
+  userId        Int      @unique
+  AdmissionDate DateTime @default(now())
+  rollNo        Int
+  classId       Int 
+  parent Int
+}
+
+model Class {
+  id                    Int                     @id @default(autoincrement())
+  className             String
+  isActive              Boolean                 @default(true)
+}
+
+model Subject {
+  id                    Int                     @id @default(autoincrement())
+  subjectName           String
+  isActive              Boolean                 @default(true)
+ 
+}
+
+model Parent{
+  id Int  @id @default(autoincrement())
+  userId Int
+  isActive  Boolean                 @default(true)
+}
