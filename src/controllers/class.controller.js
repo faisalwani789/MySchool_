@@ -1,8 +1,9 @@
 import { prisma } from "../../lib/prisma.js"
 export const createClass = async (req, res) => {
-    const { id, classes,className } = req.body
+    const { className ,id } = req.body
+    console.log(id)
     try {
-        if (id) {
+        if (req.body?.id) {
             //update
             const classExists = await prisma.class.findUnique({
                 where: {
@@ -18,13 +19,21 @@ export const createClass = async (req, res) => {
                     className:className
                 }
             })
-            return res.status(201).json({ msg: 'class updated  successfully with subjects' })
+            return res.status(201).json({ msg: 'class updated  successfully' })
         }
         else {
-            const newClass = await prisma.class.createMany({
-                data: classes
+            const checkClass = await prisma.class.findUnique({
+                where: {
+                    className: className
+                }
             })
-            return res.status(201).json({ msg: 'classes added successfully with subjects', })
+            if (checkClass) throw new Error('class already exists')
+            const newClass = await prisma.class.create({
+                data:{
+                    className:className
+                }
+            })
+            return res.status(201).json({ msg: 'classes added successfully' })
         }
     } catch (error) {
         return res.status(500).json({ msg: error.message })
@@ -32,12 +41,20 @@ export const createClass = async (req, res) => {
 
 }
 export const getClasses = async (req, res) => {
+     const{id}=req.body
       try {
-        const classes= await prisma.class.findMany({
-            
+        if(req.body.id){
+             const getClass= await prisma.class.findUnique({
+            where:{
+                id:id
+            }
         })
+        return res.status(201).json({getClass})
+        }
+        const classes= await prisma.class.findMany({})
         return res.status(201).json({classes})
     } catch (error) {
           return res.status(500).json({ msg: error.message })
     }
 }
+

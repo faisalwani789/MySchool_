@@ -242,3 +242,11 @@ export const addUser = async (req, res) => {
         res.status(500).send(error.message)
     }
 }
+
+export const getUsers=async(req,res)=>{
+    try {
+        
+    } catch (error) {
+        res.status(500).send(error.message)
+    }
+}

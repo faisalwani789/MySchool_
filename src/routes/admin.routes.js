@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { createClass,getClasses } from "../controllers/class.controller";
-import { getSubjects,addSubject } from "../controllers/teacher.controller";
-import { getRoles,addRole } from "../controllers/roles.controller";
+import { createClass,getClasses } from "../controllers/class.controller.js";
+import { getSubjects,addSubject } from "../controllers/subject.controller.js";
+import { getRoles,addRole } from "../controllers/roles.controller.js";
 const router=Router()
-router.get('/classes',getClasses)
 router.post('/classes',createClass)
+router.get('/classes',getClasses)
+
 
 router.get('/subjects',getSubjects)
 router.post('/subjects',addSubject)
