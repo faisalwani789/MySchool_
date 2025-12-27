@@ -21,12 +21,12 @@ export const addSubject = async (req, res) => {
             return res.status(201).json({ msg: 'subject updated  successfully ' })
         }
         else {
-            const sub = await prisma.subject.findUnique({
+            const sub = await prisma.subject.findFirst({
                 where: {
                     subjectName: subjectName
                 }
             })
-            if (!sub) throw new Error('subject already exists')
+            if (sub) throw new Error('subject already exists')
             const newSubject = await prisma.subject.create({
                 data: {
                     subjectName: subjectName

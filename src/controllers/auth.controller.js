@@ -14,7 +14,7 @@ export const UserSignIn=async(req,res)=>{
         const userAuth= await bcrypt.compare(password,user.password)
  
         if(!userAuth)  return res.status(400).send("invalid credentials")
-        const token= jwt.sign({email,id:user.id,name:user.first_name +user.last_name},process.env.JWT_KEY,{expiresIn:'24h'})
+        const token= jwt.sign({email,id:user.id,name:user.first_name+" "+user.last_name},process.env.JWT_KEY,{expiresIn:'24h'})
       res.status(200).json({message:'login successfull',token})
 
     })

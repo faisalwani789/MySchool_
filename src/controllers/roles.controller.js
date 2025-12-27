@@ -15,6 +15,8 @@ export const addRole = async (req, res) => {
             return res.status(201).json({ message: "role updated successfully" })
         }
         else {
+            const roleExists= await prisma.roles.findFirst({where:{role:role}})
+            if(roleExists)throw new Error('role already exists')
             const newRole = await prisma.roles.create({
 
                 data: {

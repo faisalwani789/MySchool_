@@ -22,7 +22,7 @@ export const createClass = async (req, res) => {
             return res.status(201).json({ msg: 'class updated  successfully' })
         }
         else {
-            const checkClass = await prisma.class.findUnique({
+            const checkClass = await prisma.class.findFirst({
                 where: {
                     className: className
                 }

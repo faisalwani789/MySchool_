@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js"
+import bcrypt from 'bcrypt'
 export const addUser = async (req, res) => {
     const { id, user, classes, } = req.body
     const { first_name, last_name, roleId, address, roll_no, class_id, email, password, parent } = user
@@ -26,7 +27,7 @@ export const addUser = async (req, res) => {
                     }
                 })
 
-                if (updateUser.role === 2) {
+                if (updateUser.role === 1) {
                     //update student
                     const studet = await tx.student.findUnique({ where: { userId: id } })
                     if (!studet) return res.status(400).send('student does not exist')
@@ -44,7 +45,7 @@ export const addUser = async (req, res) => {
                     })
                     return res.status(201).json({ message: "student updated successfully" })
                 }
-                else if (roleId === 3) {
+                else if (roleId === 2) {
 
                     //update parent
                     const parent = await tx.parent.findUnique({ where: { userId: updateUser.id } })
@@ -137,42 +138,42 @@ export const addUser = async (req, res) => {
                 if (user) return res.status(400).send('user already exists')
 
 
-                const passwordHash = await bcrypt.hash(password, 10)
+                const passwordHash = await bcrypt.hash(password , 10)
                 const newUser = await tx.user.create({
                     data: {
                         first_name: first_name,
                         last_name: last_name,
                         email: email,
-                        roleId: roleId,
+                        role: roleId,
                         password: passwordHash,
                         address: address
                     },
                     select: {
                         id: true,
                         email: true,
-                        roleId: true
+                        role: true
                     }
                 })
 
 
-                if (newUser.role === 2) {
+                if (newUser.role === 1) {
                     //first add parent user then student
                     //add student
                     //create parent user
-                    const passwordHash = await bcrypt.hash(parent.password, 10)
+                    const passwordHash = await bcrypt.hash(parent.password , 10)
                     const newParentUser = await tx.user.create({
                         data: {
                             first_name: parent.first_name,
                             last_name: parent.last_name,
                             email: parent.email,
-                            roleId: parent.roleId,
+                            role: parent.roleId,
                             password: passwordHash,
                             address: address //same of student/user
                         },
                         select: {
                             id: true,
                             email: true,
-                            roleId: true
+                            role: true
                         }
                     })
 
@@ -213,20 +214,12 @@ export const addUser = async (req, res) => {
                             console.log(tcr.class_id)
                             const TrClassId = await tx.teacherClasses.create({
                                 data: {
-                                    teacher: {
-                                        connect: {
-                                            id: newTeacher.id
-                                        }
-                                    },
-                                    class: {
-                                        connect: {
-                                            id: tcr.class_id
-                                        }
-                                    }
+                                   classId:tcr.class_id,
+                                   teacherId:newTeacher.id
                                 }
                             })
                             await tx.teacherClassesSubject.createMany({
-                                data: tcr?.subjects.map(sub => ({ teacherClassId: TrClassId.id, subject_id: sub }))
+                                data: tcr?.subjects.map(sub => ({ teacherClassId: TrClassId.id, subjectId: sub }))
                             })
                         }
                         return res.status(201).json({ msg: 'teacher added successfully with subjects', })
@@ -245,7 +238,14 @@ export const addUser = async (req, res) => {
 
 export const getUsers=async(req,res)=>{
     try {
-        
+        await prisma.$transaction(async(tx)=>{
+            const users= await tx.$queryRaw`
+            
+            `
+            return res.status(201).json({
+                users
+            })
+        })
     } catch (error) {
         res.status(500).send(error.message)
     }
