@@ -2,7 +2,8 @@ import { prisma } from "../../lib/prisma.js"
 import bcrypt from 'bcrypt'
 export const addUser = async (req, res) => {
     const { id, user, classes, } = req.body
-    const { first_name, last_name, roleId, address, roll_no, class_id, email, password, parent } = user
+    const { first_name, last_name, roleId, address, roll_no, class_id, email, password, Parent } = user
+   
     try {
         await prisma.$transaction(async (tx) => {
             if (req.body?.id) {
@@ -11,24 +12,27 @@ export const addUser = async (req, res) => {
                 const user = await tx.user.findUnique({ where: { id: id } })
                 if (!user) return res.status(400).send('user does not exist')
 
+                if (roleId !== 2) {
+                    const updateUser = await tx.user.update({
+                        where: { id: id },
+                        data: {
+                            first_name: first_name,
+                            last_name: last_name,
+                            email: email,
+                            address: address
 
-                const updateUser = await tx.user.update({
-                    where: { id: id },
-                    data: {
-                        first_name: first_name,
-                        last_name: last_name,
-                        email: email,
-                        address: address
+                        },
+                        select: {
+                            role: true,
+                            id: true
+                        }
+                    })
 
-                    },
-                    select: {
-                        role: true,
-                        id: true
-                    }
-                })
+                }
 
-                if (updateUser.role === 1) {
+                if (roleId === 1) {
                     //update student
+
                     const studet = await tx.student.findUnique({ where: { userId: id } })
                     if (!studet) return res.status(400).send('student does not exist')
                     //how to update parent and student
@@ -48,15 +52,29 @@ export const addUser = async (req, res) => {
                 else if (roleId === 2) {
 
                     //update parent
+                    const updateUser = await tx.user.update({
+                        where: { id: id },
+                        data: {
+                            first_name: Parent.first_name,
+                            last_name: Parent.last_name,
+                            email: Parent.email,
+                            address: Parent.address
+
+                        },
+                        select: {
+                            role: true,
+                            id: true
+                        }
+                    })
                     const parent = await tx.parent.findUnique({ where: { userId: updateUser.id } })
                     if (!parent) return res.status(400).send('no user found')
                     await tx.parent.update({
                         where: { userId: updateUser.id },
                         data: {
-                            occupation: parent.occupation
+                            occupation: Parent.occupation
                         }
                     })
-                     return res.status(201).json({ message: "parent updated successfully" })
+                    return res.status(201).json({ message: "parent updated successfully" })
                 }
                 else {
                     const teacher = await tx.teacher.findUnique({ where: { userId: id } })
@@ -68,12 +86,14 @@ export const addUser = async (req, res) => {
                         data: { isActive: false }
 
                     })
-
+                    
+                    
+                    
                     const teacherClassIds = await tx.teacherClasses.findMany({
                         where: { teacherId: teacher.id },
                         select: { id: true }
                     })
-
+                    
 
                     if (teacherClassIds.length) {
                         await tx.teacherClassesSubject.updateMany({
@@ -85,6 +105,12 @@ export const addUser = async (req, res) => {
                             data: { isActive: false }
                         })
                     }
+                    // const resp= await tx.teacherClassesSubject.findMany({
+                    //     where:{
+                    //        teacherClassId: teacherClassIds[0].id  
+                    //     }
+                    // })
+                    // return res.json(resp)
 
 
 
@@ -126,7 +152,12 @@ export const addUser = async (req, res) => {
                             })
                         }
                     }
-
+                    const test=await tx.teacherClasses.findFirst({
+                        where:{
+                            teacherId:teacher.id
+                        }
+                    })
+                    console.log(test)
                     return res.status(201).json({ message: "teacher updated successfully" })
                 }
             }
@@ -138,7 +169,7 @@ export const addUser = async (req, res) => {
                 if (user) return res.status(400).send('user already exists')
 
 
-                const passwordHash = await bcrypt.hash(password , 10)
+                const passwordHash = await bcrypt.hash(password, 10)
                 const newUser = await tx.user.create({
                     data: {
                         first_name: first_name,
@@ -160,7 +191,7 @@ export const addUser = async (req, res) => {
                     //first add parent user then student
                     //add student
                     //create parent user
-                    const passwordHash = await bcrypt.hash(parent.password , 10)
+                    const passwordHash = await bcrypt.hash(parent.password, 10)
                     const newParentUser = await tx.user.create({
                         data: {
                             first_name: parent.first_name,
@@ -189,7 +220,7 @@ export const addUser = async (req, res) => {
                             rollNo: roll_no,
                             userId: newUser.id,
                             classId: class_id,
-                            parent: newParent.id
+                            parentId: newParent.id
                         },
                         select: {
                             rollNo: true
@@ -214,8 +245,8 @@ export const addUser = async (req, res) => {
                             console.log(tcr.class_id)
                             const TrClassId = await tx.teacherClasses.create({
                                 data: {
-                                   classId:tcr.class_id,
-                                   teacherId:newTeacher.id
+                                    classId: tcr.class_id,
+                                    teacherId: newTeacher.id
                                 }
                             })
                             await tx.teacherClassesSubject.createMany({
@@ -236,12 +267,95 @@ export const addUser = async (req, res) => {
     }
 }
 
-export const getUsers=async(req,res)=>{
+export const getUsers = async (req, res) => {
     try {
-        await prisma.$transaction(async(tx)=>{
-            const users= await tx.$queryRaw`
-            
-            `
+        await prisma.$transaction(async (tx) => {
+            const users = await tx.user.findMany({
+                where: {
+                    role: {
+                        in: [1, 3]
+                    },
+                    teacher:{
+                        teaherClasses:{
+                            some:{
+                                isActive:true,
+                                AND :{
+                                    teacherClassSubject:{
+                                        some:{
+                                            isActive:true
+                                        }
+                                    }
+                                }
+                            },
+                            
+                            
+                        },
+                        
+                    }
+                },
+                select: {
+                    id: true,
+                    first_name: true,
+                    last_name: true,
+                    email: true,
+                    role: true,
+                    address: true,
+                    student: {
+                        select: {
+                            rollNo: true,
+                            class: {
+                                select: {
+                                    className: true
+                                }
+                            },
+                            parent: {
+                                select: {
+                                    user: {
+                                        select: {
+                                            id: true,
+                                            first_name: true,
+                                            last_name: true,
+                                            email: true,
+                                        }
+                                    },
+                                    occupation: true
+                                }
+                            }
+                        }
+                    },
+                    teacher: {
+                        select: {
+                            teaherClasses: {
+                                select: {
+                                    classes: {
+                                        select: {
+                                            id: true,
+                                            className: true,
+                                            
+                                        }
+                                    },
+                                    teacherClassSubject: {
+                                        select: {
+                                            subjects: {
+                                                select: {
+                                                    id: true,
+                                                    subjectName: true,
+                                                    
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+
+
+
+            })
+
             return res.status(201).json({
                 users
             })
