@@ -1,19 +1,19 @@
 import { prisma } from "../../lib/prisma.js"
 export const createClass = async (req, res) => {
-    const { className ,id } = req.body
-    console.log(id)
+    const { className  } = req.body
+   
     try {
         if (req.body?.id) {
             //update
             const classExists = await prisma.class.findUnique({
                 where: {
-                    id: id
+                    id: req.body.id
                 }
             })
             if (!classExists) throw new Error('class does not exist')
             await prisma.class.update({
                 where: {
-                    id: id
+                    id: req.body.id
                 },
                 data:{
                     className:className
@@ -41,12 +41,12 @@ export const createClass = async (req, res) => {
 
 }
 export const getClasses = async (req, res) => {
-     const{id}=req.body
+     
       try {
-        if(req.body.id){
+        if(req.body?.id){
              const getClass= await prisma.class.findUnique({
             where:{
-                id:id
+                id:req.body.id
             }
         })
         return res.status(201).json({getClass})

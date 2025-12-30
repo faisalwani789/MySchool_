@@ -1,12 +1,12 @@
 import { prisma } from "../../lib/prisma.js"
 
 export const addRole = async (req, res) => {
-    const { id, role } = req.body
+    const {  role } = req.body
     try {
-        if (id) {
+        if (req.body?.id) {
             const updateRole = await prisma.roles.update({
                 where: {
-                    id: id
+                    id: req.body.id
                 },
                 data: {
                     role: role
@@ -31,12 +31,11 @@ export const addRole = async (req, res) => {
     }
 }
 export const getRoles = async (req, res) => {
-    const { id } = req.body
     try {
-        if (req.body.id) {
+        if (req.body?.id) {
             const roles = await prisma.roles.findUnique({
                 where: {
-                    id: id
+                    id: req.body.id
                 }
             })
             return res.status(201).json({ roles })

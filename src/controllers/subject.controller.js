@@ -1,18 +1,18 @@
 import { prisma } from "../../lib/prisma.js"
 export const addSubject = async (req, res) => {
-    const { id, subjectName } = req.body
+    const{subjectName}=req.body
     try {
-        if (req.body.id) {
+        if (req.body?.id) {
             //update
-            const classExists = await prisma.subject.findUnique({
+            const subjectExists = await prisma.subject.findUnique({
                 where: {
-                    id: id
+                    id: req.body.id
                 }
             })
-            if (classExists) throw new Error('subject does not exist')
+            if (!subjectExists) throw new Error('subject does not exist')
             await prisma.subject.update({
                 where: {
-                    id: id
+                    id: req.body.id
                 },
                 data: {
                     subjectName: subjectName
@@ -39,13 +39,12 @@ export const addSubject = async (req, res) => {
     }
 }
 export const getSubjects = async (req, res) => {
-    const { id } = req.body
     try {
         if(req.body?.id){
             //get single user
               const subject = await prisma.subject.findUnique({
             where: {
-                id: id
+                id: req.body.id
             }
         })
         return res.status(201).json({ subject })
