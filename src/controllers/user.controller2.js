@@ -8,10 +8,9 @@ export const addUser = async (req, res) => {
 
     try {
         await prisma.$transaction(async (tx) => {
-            // const user = await tx.user.findUnique({ where: { email: email } })
-            // if (user) return res.status(400).send('user already exists')
-
-            if (req.body.user.id) {
+            const user = await tx.user.findUnique({ where: { email: email } })
+            if (req.body?.user?.id) {
+                if (!user) throw new Error('user does not exist')
                 newUser = await tx.user.update({
                     where: {
                         id: id
@@ -26,6 +25,9 @@ export const addUser = async (req, res) => {
                 })
             }
             else {
+
+                if (user) return res.status(400).send('user already exists')
+
                 const passwordHash = await bcrypt.hash(password, 10)
                 newUser = await tx.user.create({
                     data: {
@@ -106,7 +108,7 @@ export const addUser = async (req, res) => {
                 }
 
 
-                return res.status(201).send(`student and its parent with roll no created successfully`)
+                return res.status(201).send(`student and its parent  created successfully`)
             }
 
 
@@ -265,20 +267,28 @@ export const getUsers = async (req, res) => {
 
         }
         const findOne = {
-            id:req.body?.id,
+            id: req.body?.id,
             role: {
-                in: [1, 3]
+                in: [1, 2, 3]
             },
-            teacher: {
-                teaherClasses: {
-                    some: {
-                        isActive: true
-                    },
-
-
+            OR: [
+                {
+                    student: {
+                        isNot: null
+                    }
                 },
+                {
+                    teacher: {
+                        teaherClasses: {
+                            some: {
+                                isActive: true
+                            }
+                        }
+                    }
+                }
+            ]
 
-            }
+
         }
         await prisma.$transaction(async (tx) => {
             if (req.body?.id) {
@@ -292,20 +302,31 @@ export const getUsers = async (req, res) => {
                 users = await tx.user.findMany({
                     where: {
                         role: {
-                            in: [1, 3]
+                            in: [1, 2, 3]
                         },
-                        teacher: {
-                            teaherClasses: {
-                                some: {
-                                    isActive: true
-                                },
-
-
+                        OR: [
+                            {
+                                student: {
+                                    isNot: null
+                                }
                             },
+                            {
+                                teacher: {
+                                    teaherClasses: {
+                                        some: {
+                                            isActive: true
+                                        }
+                                    }
+                                }
+                            }
+                        ]
 
-                        }
                     },
-                   ...BaseQuery
+                    ...BaseQuery,
+                    orderBy: {
+                        createdAT: 'desc'
+                    }
+
 
                 })
             }
