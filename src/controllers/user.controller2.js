@@ -2,7 +2,7 @@ import { prisma } from "../../lib/prisma.js"
 import bcrypt from 'bcrypt'
 export const addUser = async (req, res) => {
     const { user, classes, parent } = req.body
-    const { id , first_name, last_name, roleId, address, email, password } = user
+    const { id, first_name, last_name, roleId, address, email, password } = user
     const { occupation, children } = parent
     let newUser
 
@@ -12,7 +12,7 @@ export const addUser = async (req, res) => {
             // if (user) return res.status(400).send('user already exists')
 
             if (req.body.user.id) {
-                 newUser = await tx.user.update({
+                newUser = await tx.user.update({
                     where: {
                         id: id
                     },
@@ -27,7 +27,7 @@ export const addUser = async (req, res) => {
             }
             else {
                 const passwordHash = await bcrypt.hash(password, 10)
-                 newUser = await tx.user.create({
+                newUser = await tx.user.create({
                     data: {
                         first_name: first_name,
                         last_name: last_name,
@@ -56,55 +56,55 @@ export const addUser = async (req, res) => {
                     }
                 })
 
-            if(children){
-                for (const child of children) {
+                if (children) {
+                    for (const child of children) {
 
-                    //adding student user
-                    const passwordHash = await bcrypt.hash(child.password, 10)
-                    const childrenUser = await tx.user.upsert({
-                        where: {
-                            id: child.childUserId || -1
-                        },
-                        update: {
-                            first_name: child.first_name,
-                            last_name: child.last_name,
-                            email: child.email,
-                            address: child.address
-                        },
-                        create: {
-                            first_name: child.first_name,
-                            last_name: child.last_name,
-                            email: child.email,
-                            role: child.roleId,
-                            password: passwordHash,
-                            address: child.address //same of student/user
-                        },
-                        select: {
-                            id: true,
-                            email: true,
-                            role: true
-                        }
-                    })
+                        //adding student user
+                        const passwordHash = await bcrypt.hash(child.password, 10)
+                        const childrenUser = await tx.user.upsert({
+                            where: {
+                                id: child.childUserId || -1
+                            },
+                            update: {
+                                first_name: child.first_name,
+                                last_name: child.last_name,
+                                email: child.email,
+                                address: child.address
+                            },
+                            create: {
+                                first_name: child.first_name,
+                                last_name: child.last_name,
+                                email: child.email,
+                                role: child.roleId,
+                                password: passwordHash,
+                                address: child.address //same of student/user
+                            },
+                            select: {
+                                id: true,
+                                email: true,
+                                role: true
+                            }
+                        })
 
-                    //adding student from student users
+                        //adding student from student users
 
-                    const newStudent = await tx.student.upsert({
-                        where: { userId: childrenUser.id || -1 },
-                        update: {
-                            classId: child.class_id,
-                            rollNo: child.roll_no
-                        },
-                        create: {
-                            rollNo: child.roll_no,
-                            userId: childrenUser.id,
-                            classId: child.class_id,
-                            parentId: ParentC.id
-                        }
-                    })
+                        const newStudent = await tx.student.upsert({
+                            where: { userId: childrenUser.id || -1 },
+                            update: {
+                                classId: child.class_id,
+                                rollNo: child.roll_no
+                            },
+                            create: {
+                                rollNo: child.roll_no,
+                                userId: childrenUser.id,
+                                classId: child.class_id,
+                                parentId: ParentC.id
+                            }
+                        })
 
+                    }
                 }
-            }    
-                
+
 
                 return res.status(201).send(`student and its parent with roll no created successfully`)
             }
@@ -195,5 +195,127 @@ export const addUser = async (req, res) => {
 
     } catch (error) {
         res.status(500).send(error.message)
+    }
+}
+export const getUsers = async (req, res) => {
+
+    let users
+    try {
+        const BaseQuery = {
+            select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                email: true,
+                role: true,
+                address: true,
+                student: {
+                    select: {
+                        rollNo: true,
+                        class: {
+                            select: {
+                                className: true
+                            }
+                        },
+                        parent: {
+                            select: {
+                                user: {
+                                    select: {
+                                        id: true,
+                                        first_name: true,
+                                        last_name: true,
+                                        email: true,
+                                    }
+                                },
+                                occupation: true
+                            }
+                        }
+                    }
+                },
+                teacher: {
+                    select: {
+                        teaherClasses: {
+                            select: {
+                                classes: {
+                                    select: {
+                                        id: true,
+                                        className: true,
+
+                                    }
+                                },
+                                teacherClassSubject: {
+                                    select: {
+                                        subjects: {
+                                            select: {
+                                                id: true,
+                                                subjectName: true,
+
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+
+
+
+        }
+        const findOne = {
+            id:req.body?.id,
+            role: {
+                in: [1, 3]
+            },
+            teacher: {
+                teaherClasses: {
+                    some: {
+                        isActive: true
+                    },
+
+
+                },
+
+            }
+        }
+        await prisma.$transaction(async (tx) => {
+            if (req.body?.id) {
+
+                users = await tx.user.findUnique({
+                    where: findOne,
+                    ...BaseQuery
+                })
+            }
+            else {
+                users = await tx.user.findMany({
+                    where: {
+                        role: {
+                            in: [1, 3]
+                        },
+                        teacher: {
+                            teaherClasses: {
+                                some: {
+                                    isActive: true
+                                },
+
+
+                            },
+
+                        }
+                    },
+                   ...BaseQuery
+
+                })
+            }
+
+
+            return res.status(201).json({
+                users
+            })
+        })
+    } catch (error) {
+        res.status(500).json({ msg: error.message })
     }
 }
