@@ -65,11 +65,20 @@ export const getClasses = async (req, res) => {
             const getClass = await prisma.class.findUnique({
                 where: {
                     id: req.body.id
+
+                },
+                include:{
+                    class:true,
+                    subject:true
                 }
             })
             return res.status(201).json({ getClass })
         }
-        const classes = await prisma.class.findMany({})
+        const classes = await prisma.class.findMany({
+            include:{
+                    classSubjects:true
+                }
+        })
         return res.status(201).json({ classes })
     } catch (error) {
         return res.status(500).json({ msg: error.message })
