@@ -9,7 +9,7 @@ export const addUser = async (req, res) => {
     try {
         await prisma.$transaction(async (tx) => {
             const user = await tx.user.findUnique({ where: { email: email } })
-            if (req.body?.user?.id) {
+            if (req.body?.user?.id ) {
                 if (!user) throw new Error('user does not exist')
                 newUser = await tx.user.update({
                     where: {
@@ -23,6 +23,7 @@ export const addUser = async (req, res) => {
                     }
 
                 })
+                if(newUser.role===4) return res.status(201).send('admin updated successfully')
             }
             else {
 
@@ -39,6 +40,7 @@ export const addUser = async (req, res) => {
                         address: address
                     }
                 })
+                if(newUser.role===4) return res.status(201).send('admin added successfully')
             }
 
 
@@ -190,7 +192,7 @@ export const addUser = async (req, res) => {
                     }
                 }
 
-                return res.status(201).json({ message: "teacher created/updated successfully" })
+                return res.status(201).json({ message: "teacher created / updated successfully" ,success:true})
             }
 
         })
@@ -269,12 +271,12 @@ export const getUsers = async (req, res) => {
         const findOne = {
             id: req.body?.id,
             role: {
-                in: [1, 2, 3]
+                in: [1, 2, 3, 4]
             },
             OR: [
                 {
                     student: {
-                        isNot: null
+                          none: {},
                     }
                 },
                 {
@@ -302,12 +304,17 @@ export const getUsers = async (req, res) => {
                 users = await tx.user.findMany({
                     where: {
                         role: {
-                            in: [1, 2, 3]
+                            in: [1, 2, 3,4]
                         },
                         OR: [
                             {
                                 student: {
-                                    isNot: null
+                                    is:null
+                                }
+                            },
+                            {
+                                teacher:{
+                                    is:null
                                 }
                             },
                             {
