@@ -74,8 +74,10 @@ model Student {
   user User @relation(fields: [userId],references: [id])
   parent Parent @relation(fields: [parentId],references: [id])
   class Class @relation(fields: [classId],references: [id])
+  marks marks[]
   @@unique([userId,parentId])
 }
+
 model Class {
   id                    Int                     @id @default(autoincrement())
   className             String                  @unique
@@ -91,7 +93,7 @@ model Subject {
   isActive              Boolean                 @default(true)
   teacherClassSubject TeacherClassesSubject[]
   classSubjects ClassSubjects[]
- 
+  marks marks[]
  
 }
 model ClassSubjects{
@@ -102,6 +104,16 @@ model ClassSubjects{
   class Class @relation(fields: [classId],references: [id])
   subject Subject @relation(fields: [subjectId],references: [id])
 @@unique([classId,subjectId])
+}
+model marks{
+  id Int @id @default(autoincrement())
+  studentId Int
+  subjectId Int
+  marksObt Int
+  maxMarks Int @default(100)
+  classSubject Subject @relation(fields: [subjectId],references: [id])
+  student Student @relation(fields: [studentId],references: [id])
+
 }
 
 model Parent{
