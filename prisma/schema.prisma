@@ -78,18 +78,30 @@ model Student {
 }
 model Class {
   id                    Int                     @id @default(autoincrement())
-  className             String
+  className             String                  @unique
   isActive              Boolean                 @default(true)
   student Student[]
   teachers TeacherClasses[]
+  classSubjects ClassSubjects[]
 }
 
 model Subject {
   id                    Int                     @id @default(autoincrement())
-  subjectName           String
+  subjectName           String  
   isActive              Boolean                 @default(true)
   teacherClassSubject TeacherClassesSubject[]
+  classSubjects ClassSubjects[]
  
+ 
+}
+model ClassSubjects{
+  id   Int                     @id @default(autoincrement())
+  classId Int                 
+  subjectId Int
+  isActive              Boolean                 @default(true)
+  class Class @relation(fields: [classId],references: [id])
+  subject Subject @relation(fields: [subjectId],references: [id])
+@@unique([classId,subjectId])
 }
 
 model Parent{

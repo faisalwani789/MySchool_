@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { createClass,getClasses } from "../controllers/class.controller.js";
+import { createClassSubject,getClasses } from "../controllers/class.controller.js";
 import { getSubjects,addSubject } from "../controllers/subject.controller.js";
 import { getRoles,addRole } from "../controllers/roles.controller.js";
 
 import { authMiddleware,authRole } from "../middlewares/auth.middleware.js";
 const router=Router()
-router.post('/classes',authMiddleware,authRole(4),createClass)
+router.post('/classes',authMiddleware,authRole(4),createClassSubject)
 router.get('/classes',authMiddleware,authRole(4),getClasses)
 
 

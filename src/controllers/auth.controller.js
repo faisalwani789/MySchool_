@@ -19,7 +19,8 @@ export const UserSignIn=async(req,res)=>{
 
     })
     } catch (error) {
-        res.status(400).send(Error.message)
+        res.status(400).send(error.message)
+
     }
    
     

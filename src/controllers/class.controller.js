@@ -1,60 +1,78 @@
 import { prisma } from "../../lib/prisma.js"
-export const createClass = async (req, res) => {
-    const { className  } = req.body
-   
+export const createClassSubject = async (req, res) => {
+    const { classes } = req.body
+
+
     try {
-        if (req.body?.id) {
-            //update
-            const classExists = await prisma.class.findUnique({
-                where: {
-                    id: req.body.id
+        const result = await prisma.$transaction(async (tx) => {
+            for (const cls of classes) {
+                const savedClass = cls.id ? await tx.class.update({
+                    where: { id: cls.id },
+                    data: { className: cls.className },
+
+                }) : await tx.class.create({
+                    data: {
+                        className: cls.className
+                    }
+                })
+                if(!Array.isArray(cls.subjects)) continue //no subjects sent 
+
+                for (const sub of cls.subjects) {
+                    let savedSubject
+                    if (sub.id) {
+                        await tx.subject.update({
+                            where: { id: sub.id },
+                            data: { subjectName: sub.subjectName }
+                        
+                        })
+                    }
+                    else {
+                        savedSubject = await tx.subject.create({
+                            data: {
+                                subjectName: sub.subjectName
+                            }
+                        })
+                        await tx.classSubjects.upsert({
+                            where: {
+                                classId_subjectId:{
+                                    classId:savedClass.id,
+                                    subjectId:savedSubject.id
+                                }
+                               
+                            },
+                            update: {},
+                            create: {
+                                classId: savedClass.id,
+                                subjectId: savedSubject.id
+                            }
+                        })
+                    }
+
+
                 }
-            })
-            if (!classExists) throw new Error('class does not exist')
-            await prisma.class.update({
-                where: {
-                    id: req.body.id
-                },
-                data:{
-                    className:className
-                }
-            })
-            return res.status(201).json({ msg: 'class updated  successfully' })
-        }
-        else {
-            const checkClass = await prisma.class.findFirst({
-                where: {
-                    className: className
-                }
-            })
-            if (checkClass) throw new Error('class already exists')
-            const newClass = await prisma.class.create({
-                data:{
-                    className:className
-                }
-            })
-            return res.status(201).json({ msg: 'classes added successfully' })
-        }
+            }
+        })
+        res.json({ success: true, data: result })
     } catch (error) {
-        return res.status(500).json({ msg: error.message })
+        return res.status(500).send(error.message)
     }
 
 }
 export const getClasses = async (req, res) => {
-     
-      try {
-        if(req.body?.id){
-             const getClass= await prisma.class.findUnique({
-            where:{
-                id:req.body.id
-            }
-        })
-        return res.status(201).json({getClass})
+
+    try {
+        if (req.body?.id) {
+            const getClass = await prisma.class.findUnique({
+                where: {
+                    id: req.body.id
+                }
+            })
+            return res.status(201).json({ getClass })
         }
-        const classes= await prisma.class.findMany({})
-        return res.status(201).json({classes})
+        const classes = await prisma.class.findMany({})
+        return res.status(201).json({ classes })
     } catch (error) {
-          return res.status(500).json({ msg: error.message })
+        return res.status(500).json({ msg: error.message })
     }
 }
 
