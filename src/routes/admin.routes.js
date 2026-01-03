@@ -6,8 +6,8 @@ import { getRoles,addRole } from "../controllers/roles.controller.js";
 import { authMiddleware,authRole } from "../middlewares/auth.middleware.js";
 import { addMarks, getMarks } from "../controllers/marks.controller.js";
 const router=Router()
-router.post('/classes',authMiddleware,authRole(4),createClassSubject)
-router.get('/classes',authMiddleware,authRole(4),getClasses)
+router.post('/classes',createClassSubject)
+router.get('/classes',getClasses)
 
 
 router.get('/subjects',authMiddleware,authRole(4),getSubjects)

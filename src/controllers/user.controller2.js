@@ -155,6 +155,12 @@ export const addUser = async (req, res) => {
 
 
                 for (const tcr of classes || []) {
+                    const classExists= await tx.class.findUnique({
+                        where:{
+                            id:tcr.class_id
+                        }
+                    })
+                    if(!classExists)throw new Error ("class does not exist")
                     const TrClassId = await tx.teacherClasses.upsert({
                         where: {
                             teacherId_classId: {
@@ -173,6 +179,12 @@ export const addUser = async (req, res) => {
                     })
 
                     for (const sub of tcr.subjects || []) {
+                         const subjectExists= await tx.subject.findUnique({
+                        where:{
+                            id:sub
+                        }
+                    })
+                    if(!subjectExists)throw new Error ("subject does not exist")
                         await tx.teacherClassesSubject.upsert({
                             where: {
                                 teacherClassId_subjectId: {

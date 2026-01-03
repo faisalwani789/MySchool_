@@ -20,23 +20,33 @@ model User {
   email      String   @unique
   address    String
   password   String
-  role       Int    @default(1)
   createdAT  DateTime @default(now())
   isActive   Boolean  @default(true)
   teacher Teacher?
   student Student?
   parent Parent?
+  userRole UserRole[]
  
 }
 model Roles{
   id Int      @id @default(autoincrement())
   role String @unique 
+  userRole UserRole[]
+}
+model UserRole {
+  userId Int
+  roleId Int @default(1)
+  user   User @relation(fields: [userId], references: [id])
+  role   Roles @relation(fields: [roleId], references: [id])
+  @@id([userId, roleId])
 }
 
 model Teacher {
   id                    Int                     @id @default(autoincrement())
   userId                Int                     @unique
   joiningDate          DateTime                @default(now())
+  salary Int @default(10000)
+  experiance String
   user User @relation(fields: [userId],references: [id])
   teaherClasses TeacherClasses[]
  
@@ -119,6 +129,7 @@ model marks{
 model Parent{
   id Int  @id @default(autoincrement())
   occupation String
+  contact Int
   userId Int @unique
   isActive  Boolean                 @default(true)
   user User @relation(fields: [userId],references: [id])
